@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.myRecords}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<div class="card fade-in">
+  <div class="card-head">
+    <div class="card-title" th:text="#{employee.formSub.title}">Meus Registros de Serviço</div>
+    <span class="badge badge-primary" th:text="${page.totalElements} + ' ' + #{lbl.records}"></span>
+  </div>
+  <div th:if="${page.isEmpty()}" class="card-body">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text" th:text="#{employee.formSub.noRecords}">Nenhum registro enviado</div>
+      <div style="margin-top:12px">
+        <a th:href="@{/employee/forms}" class="btn btn-primary btn-sm"
+           th:text="#{employee.formSub.fillForm}">Preencher Formulário</a>
+      </div>
+    </div>
+  </div>
+  <div class="table-wrap" th:unless="${page.isEmpty()}">
+    <table>
+      <thead>
+        <tr>
+          <th th:text="#{lbl.form}">Formulário</th>
+          <th th:text="#{lbl.date}">Data</th>
+          <th th:text="#{lbl.cost}">Custo</th>
+          <th th:text="#{lbl.hours}">Horas</th>
+          <th th:text="#{lbl.value}">Valor</th>
+          <th th:text="#{lbl.status}">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="s : ${page.content}">
+          <td class="fw-bold" th:text="${s.template.name}"></td>
+          <td th:text="${#temporals.format(s.occurrenceDate,'dd/MM/yyyy')}"></td>
+          <td th:text="${#numbers.formatCurrency(s.serviceCost)}"></td>
+          <td th:text="${s.serviceHours} + 'h'"></td>
+          <td class="fw-bold text-green" th:text="${#numbers.formatCurrency(s.serviceValue)}"></td>
+          <td>
+            <span th:class="'badge badge-' + ${s.status.badgeClass}" th:text="${s.status.label}"></span>
+          </td>
+          <td style="display:flex;gap:6px;align-items:center">
+            <a th:href="@{/employee/form-submissions/{id}(id=${s.id})}"
+               class="btn btn-sm btn-outline" th:text="#{btn.view}">Ver</a>
+            <form th:if="${s.status.name() == 'DRAFT'}"
+                  th:action="@{/employee/form-submissions/{id}/delete(id=${s.id})}"
+                  method="post" style="margin:0">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn btn-sm btn-danger"
+                      onclick="return confirm('Excluir este registro? Esta ação não pode ser desfeita.')">
+                Excluir
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div th:if="${page.totalPages > 1}"
+       class="card-body" style="display:flex;gap:8px;justify-content:center">
+    <a th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+       th:href="@{/employee/form-submissions(page=${i})}"
+       th:text="${i + 1}"
+       th:classappend="${i == page.number} ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'"></a>
+  </div>
+</div>
+
+</content>
+</th:block>
+</body>
+</html>

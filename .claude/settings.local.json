@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile *)",
+      "PowerShell(Get-Command *)",
+      "Bash(\"D:/programação/maven-mvnd-1.0.3-windows-amd64/bin/mvnd.cmd\" compile *)",
+      "PowerShell(where.exe mvn 2>$null; if \\(-not $?\\) { \"mvn not found in PATH\" })",
+      "PowerShell(docker context ls *)",
+      "PowerShell(docker context use *)",
+      "PowerShell(psql *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Start-Sleep -Seconds 20; $result = try { Invoke-WebRequest -Uri \"http://localhost:9090/login\" -TimeoutSec 5 -UseBasicParsing } catch { $_ }; if \\($result.StatusCode\\) { \"UP: $\\($result.StatusCode\\)\" } else { \"DOWN: $\\($result.Exception.Message\\)\" })",
+      "Bash(Start-Sleep -Seconds 20)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Pablo\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--coding-nexusflow\\\\d09a3ff0-ee75-4103-aa8d-43f2524c9cd7\\\\tasks\\\\b3l2p2xp8.output\" -Tail 40)",
+      "PowerShell(Stop-Process *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\coding\\\\nexusflow\\\\nexusflow\\\\src\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Recurse \"D:\\\\coding\\\\nexusflow\" -Include \"*owner*.html\")",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Test-Path \"D:\\\\coding\\\\nexusflow\"; Get-ChildItem \"D:\\\\coding\\\\nexusflow\" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })",
+      "Bash(grep -E \"\\\\.\\(java|ts|tsx|jsx|js\\)$\")",
+      "Bash(xargs grep -l \"Owner\")",
+      "Bash(xargs grep -l \"CreateOwnerForm\\\\|comercio.*email\")",
+      "Bash(New-Item -ItemType Directory -Force \"D:\\\\coding\\\\nexusflow\\\\nexusflow\\\\src\\\\main\\\\resources\\\\templates\\\\guest\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item *)"
+    ]
+  }
+}

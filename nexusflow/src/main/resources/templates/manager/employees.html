@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.team}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<div class="card" style="margin-bottom:20px;border-color:rgba(108,99,255,.25)">
+  <div class="card-body" style="padding:14px 20px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px"
+            th:text="#{manager.employees.levels}">Níveis:</span>
+      <th:block th:each="lvl : ${allLevels}">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span th:class="'badge badge-' + ${lvl.badgeClass}"
+                th:text="${lvl.icon} + ' ' + ${lvl.label}"></span>
+          <span style="font-size:11px;color:var(--muted)" th:switch="${lvl.name()}">
+            <span th:case="'OWNER'"      th:text="#{manager.employees.level.owner}">Controle total</span>
+            <span th:case="'SUBMANAGER'" th:text="#{manager.employees.level.submanager}">Dashboard + cria funcionários + aprova</span>
+            <span th:case="'SENIOR'"     th:text="#{manager.employees.level.senior}">Aprova formulários</span>
+            <span th:case="'STANDARD'"   th:text="#{manager.employees.level.standard}">Apenas próprios registros</span>
+          </span>
+        </div>
+      </th:block>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:22px;align-items:start">
+
+  <div>
+    <div class="section-header">
+      <div class="section-title" th:text="#{manager.employees.title}">Funcionários</div>
+      <span class="badge badge-primary" th:text="${#lists.size(employees)} + ' ' + #{lbl.records}"></span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(employees)}" class="card">
+      <div class="card-body empty">
+        <div class="empty-icon">👥</div>
+        <div class="empty-text" th:text="#{manager.employees.none}">Nenhum funcionário cadastrado</div>
+      </div>
+    </div>
+
+    <div th:each="emp : ${employees}" class="card fade-in"
+         th:style="${!emp.active} ? 'margin-bottom:10px;opacity:0.65;border-style:dashed' : 'margin-bottom:10px'">
+      <div class="card-body" style="padding:16px 18px">
+
+        <div class="flex items-center gap-2" style="margin-bottom:12px">
+          <div class="avatar" th:text="${emp.initials}"
+               th:style="${!emp.active} ? 'filter:grayscale(1)' : ''">XX</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="fw-bold" style="font-size:14px" th:text="${emp.name}">Nome</div>
+              <span th:if="${!emp.active}" class="badge badge-warning" style="font-size:10px">Bloqueado</span>
+            </div>
+            <div class="text-muted" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                 th:text="${emp.email}">email</div>
+          </div>
+          <span th:class="'badge badge-' + ${emp.accessLevel.badgeClass}"
+                th:text="${emp.accessLevel.icon} + ' ' + ${emp.accessLevel.label}"></span>
+        </div>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <span th:if="${emp.accessLevel.canViewAllDashboard}"   class="chip" style="font-size:10px"
+                th:text="#{manager.employees.chip.dashboard}">📊 Dashboard</span>
+          <span th:if="${emp.accessLevel.canReviewSubmissions}"  class="chip" style="font-size:10px"
+                th:text="#{manager.employees.chip.approve}">✅ Aprovar</span>
+          <span th:if="${emp.accessLevel.canManageEmployees}"    class="chip" style="font-size:10px"
+                th:text="#{manager.employees.chip.createEmployees}">👥 Criar funcionários</span>
+          <span th:if="${emp.accessLevel.canManageAccessLevels}" class="chip" style="font-size:10px"
+                th:text="#{manager.employees.chip.manageAccess}">🔑 Gerenciar acessos</span>
+          <span th:if="${!emp.accessLevel.canViewAllDashboard and !emp.accessLevel.canReviewSubmissions}"
+                class="chip" style="font-size:10px"
+                th:text="#{manager.employees.chip.ownOnly}">📋 Somente próprios registros</span>
+        </div>
+
+        <div th:if="${actor.accessLevel.canManage(emp.accessLevel)}"
+             style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <form th:if="${emp.active}"
+                th:action="@{/manager/employees/{id}/access(id=${emp.id})}" method="post"
+                style="display:flex;gap:8px;flex:1;min-width:0">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <select name="accessLevel" class="form-control form-select"
+                    style="font-size:12px;padding:7px 32px 7px 10px;flex:1">
+              <th:block th:each="lvl : ${assignableLevels}">
+                <option th:value="${lvl.name()}"
+                        th:text="${lvl.icon} + ' ' + ${lvl.label}"
+                        th:selected="${lvl == emp.accessLevel}"></option>
+              </th:block>
+            </select>
+            <button type="submit" class="btn btn-ghost btn-sm"
+                    th:data-confirm="'Alterar nível de acesso de ' + ${emp.name} + '?'"
+                    th:text="#{btn.save}">Salvar</button>
+          </form>
+          <form th:action="@{/manager/employees/{id}/toggle(id=${emp.id})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit"
+                    th:class="${emp.active} ? 'btn btn-warning btn-sm' : 'btn btn-success btn-sm'"
+                    th:data-confirm="${emp.active} ? 'Bloquear ' + ${emp.name} + '?' : 'Desbloquear ' + ${emp.name} + '?'"
+                    th:text="${emp.active} ? 'Bloquear' : 'Desbloquear'">Bloquear</button>
+          </form>
+          <form th:if="${emp.active}"
+                th:action="@{/manager/employees/{id}/deactivate(id=${emp.id})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-danger btn-sm"
+                    th:data-confirm="'Revogar permanentemente o acesso de ' + ${emp.name} + '?'"
+                    th:text="#{btn.revoke}">Revogar</button>
+          </form>
+        </div>
+
+        <div th:if="${!actor.accessLevel.canManage(emp.accessLevel)}"
+             class="text-muted" style="font-size:11px;padding-top:4px">
+          <span th:if="${emp.accessLevel.name() == 'OWNER'}"     th:text="#{manager.employees.ownerNotEditable}">👑 Proprietário — não editável</span>
+          <span th:if="${emp.accessLevel == actor.accessLevel}"  th:text="#{manager.employees.sameLevel}">↔ Mesmo nível que você — não editável</span>
+        </div>
+
+        <div class="text-muted" style="font-size:10px;margin-top:8px"
+             th:text="#{manager.employees.since(${#temporals.format(emp.createdAt,'dd/MM/yyyy')})}"></div>
+      </div>
+    </div>
+  </div>
+
+  <div th:if="${actor.canManageEmployees()}">
+    <div class="section-header"><div class="section-title" th:text="#{manager.employees.newAccess}">Novo Acesso</div></div>
+    <div class="card">
+      <div class="card-body">
+        <form th:action="@{/manager/employees}" method="post" th:object="${form}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-group">
+            <label class="form-label" th:text="#{lbl.name}">Nome completo *</label>
+            <input type="text" th:field="*{name}" class="form-control"
+                   th:classappend="${#fields.hasErrors('name')} ? ' is-invalid'"
+                   placeholder="João da Silva"/>
+            <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">E-mail *</label>
+            <div style="display:flex;align-items:center">
+              <input type="text" th:field="*{emailPrefix}" class="form-control"
+                     th:classappend="${#fields.hasErrors('emailPrefix')} ? ' is-invalid'"
+                     placeholder="nick"
+                     style="border-radius:10px 0 0 10px;border-right:none;flex:1"/>
+              <span th:text="'@' + ${comercioSlug} + '.com'"
+                    style="background:var(--surface2);border:1px solid var(--border);border-left:none;border-radius:0 10px 10px 0;padding:0 12px;height:42px;display:flex;align-items:center;font-size:13px;color:var(--muted);white-space:nowrap">
+                @comercio.com
+              </span>
+            </div>
+            <div class="field-error" th:if="${#fields.hasErrors('emailPrefix')}" th:errors="*{emailPrefix}"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" th:text="#{lbl.password}">Senha inicial *</label>
+            <input type="password" th:field="*{password}" class="form-control"
+                   th:classappend="${#fields.hasErrors('password')} ? ' is-invalid'"
+                   th:placeholder="#{manager.employees.passwordHint}"/>
+            <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" th:text="#{manager.employees.accessLevel}">Nível de acesso inicial *</label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <th:block th:each="lvl : ${assignableLevels}">
+                <label style="display:flex;align-items:flex-start;gap:12px;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:13px 14px;cursor:pointer;transition:border-color .18s"
+                       th:id="'lbl-lvl-' + ${lvl.name()}">
+                  <input type="radio" th:field="*{accessLevel}" th:value="${lvl.name()}"
+                         style="margin-top:2px;accent-color:var(--accent)"/>
+                  <div>
+                    <div style="margin-bottom:3px">
+                      <span th:class="'badge badge-' + ${lvl.badgeClass}"
+                            th:text="${lvl.icon} + ' ' + ${lvl.label}"></span>
+                    </div>
+                    <div style="font-size:11px;color:var(--muted)" th:switch="${lvl.name()}">
+                      <span th:case="'SUBMANAGER'" th:text="#{manager.employees.level.submanager}">Dashboard completa...</span>
+                      <span th:case="'SENIOR'"     th:text="#{manager.employees.level.senior}">Pode aprovar...</span>
+                      <span th:case="'STANDARD'"   th:text="#{manager.employees.level.standard}">Acesso básico...</span>
+                      <span th:case="*"             th:text="#{manager.employees.level.default}">Acesso padrão.</span>
+                    </div>
+                  </div>
+                </label>
+              </th:block>
+            </div>
+            <div class="field-error" th:if="${#fields.hasErrors('accessLevel')}" th:errors="*{accessLevel}"></div>
+          </div>
+
+          <div class="alert alert-info" style="margin-bottom:16px;font-size:12px"
+               th:text="#{manager.employees.loginInfo}">
+          </div>
+          <button type="submit" class="btn btn-primary btn-w"
+                  th:text="#{manager.employees.createAccess}">Criar Acesso →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div th:if="${!actor.canManageEmployees()}">
+    <div class="card" style="border-color:rgba(245,158,11,.3)">
+      <div class="card-body empty">
+        <div class="empty-icon">🔒</div>
+        <div class="empty-text" th:text="#{manager.employees.noPermission}">Seu nível não permite criar novos funcionários.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[type="radio"][name="accessLevel"]').forEach(function(r) {
+    function highlight() {
+      document.querySelectorAll('input[type="radio"][name="accessLevel"]').forEach(function(x) {
+        var l = document.getElementById('lbl-lvl-' + x.value);
+        if (l) l.style.borderColor = x.checked ? 'var(--accent)' : 'var(--border)';
+      });
+    }
+    r.addEventListener('change', highlight);
+    if (r.checked) highlight();
+  });
+});
+</script>
+
+</content>
+</th:block>
+</body>
+</html>

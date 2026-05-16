@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.dashboard}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<div class="stats-grid">
+  <div class="stat-card fade-in d1">
+    <div class="stat-icon">💰</div>
+    <div class="stat-label" th:text="#{kpi.revenue}">Receita Total</div>
+    <div class="stat-value text-green" th:text="${#numbers.formatCurrency(summary.totalSales)}">0,00 €</div>
+    <div class="stat-delta" th:text="#{kpi.currentMonth}">mês atual</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:75%;background:var(--green)"></div></div>
+  </div>
+  <div class="stat-card fade-in d2">
+    <div class="stat-icon">📤</div>
+    <div class="stat-label" th:text="#{kpi.expenses}">Despesas</div>
+    <div class="stat-value text-red" th:text="${#numbers.formatCurrency(summary.totalExpenses)}">0,00 €</div>
+    <div class="stat-delta" th:text="#{kpi.currentMonth}">mês atual</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:40%;background:var(--red)"></div></div>
+  </div>
+  <div class="stat-card fade-in d3">
+    <div class="stat-icon">📈</div>
+    <div class="stat-label" th:text="#{kpi.netProfit}">Lucro Líquido</div>
+    <div class="stat-value text-accent" th:text="${#numbers.formatCurrency(summary.netBalance)}">0,00 €</div>
+    <div class="stat-delta" th:text="#{kpi.revenueMinusExpenses}">receita − despesas</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:82%;background:var(--accent)"></div></div>
+  </div>
+  <div class="stat-card fade-in d4">
+    <div class="stat-icon">⏳</div>
+    <div class="stat-label" th:text="#{kpi.pending}">Pendentes</div>
+    <div class="stat-value text-yellow" th:text="${summary.pendingCount}">0</div>
+    <div class="stat-delta" th:text="${summary.totalSubmissions} + ' ' + #{kpi.totalRecords}">0 registros</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:30%;background:var(--yellow)"></div></div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:16px">
+  <div class="card fade-in d2">
+    <div class="card-head">
+      <div class="card-title" th:text="#{manager.dashboard.salesChart}">Vendas — Últimos 7 dias</div>
+      <span class="badge badge-success" th:text="#{manager.dashboard.approvedBadge}">Aprovadas</span>
+    </div>
+    <div class="card-body">
+      <div class="bar-chart"
+           th:attr="data-bar-chart=${dailySalesJson}"
+           data-bar-chart="[]"></div>
+    </div>
+  </div>
+
+  <div class="card fade-in d3">
+    <div class="card-head">
+      <div class="card-title" th:text="#{manager.dashboard.teamPerf}">Performance da Equipe</div>
+      <a th:href="@{/manager/reports}" class="btn btn-ghost btn-sm" th:text="#{btn.seeAll}">Ver mais</a>
+    </div>
+    <div class="card-body">
+      <div th:if="${#lists.isEmpty(byEmployee)}" class="empty">
+        <div class="empty-icon">📊</div>
+        <div class="empty-text" th:text="#{manager.dashboard.noApproved}">Sem dados aprovados no período</div>
+      </div>
+      <div th:each="emp,i : ${byEmployee}" class="progress-row">
+        <div class="progress-label">
+          <span th:text="${emp.name}">Funcionário</span>
+          <span th:text="${#numbers.formatCurrency(emp.total)}"
+                th:style="${i.index == 0} ? 'color:var(--green);font-weight:700' : ''">0,00 €</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill"
+               th:style="'width:' + ${byEmployee[0].total.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? emp.total.multiply(T(java.math.BigDecimal).valueOf(100.0)).divide(byEmployee[0].total,0,T(java.math.RoundingMode).HALF_UP) : 0} + '%;background:var(--accent)'"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div th:if="${not #lists.isEmpty(pending)}"
+     class="card fade-in" style="margin-bottom:16px;border-color:rgba(245,158,11,.35)">
+  <div class="card-head">
+    <div class="card-title" th:text="#{manager.dashboard.awaitingApproval}">⏳ Aguardando Aprovação</div>
+    <span class="badge badge-warning" th:text="${#lists.size(pending)} + ' ' + #{kpi.pending}"></span>
+  </div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th th:text="#{lbl.form}">Formulário</th>
+            <th th:text="#{lbl.employee}">Funcionário</th>
+            <th th:text="#{lbl.type}">Tipo</th>
+            <th th:text="#{lbl.value}">Valor</th>
+            <th th:text="#{lbl.date}">Data</th>
+            <th th:text="#{lbl.action}">Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="s : ${pending}">
+            <td class="td-mono" th:text="${s.formNumber}">F-0001</td>
+            <td>
+              <div class="flex items-center gap-1">
+                <div class="avatar" style="width:26px;height:26px;font-size:10px" th:text="${s.user.initials}">XX</div>
+                <span th:text="${s.user.name}">Nome</span>
+              </div>
+            </td>
+            <td><span th:class="'badge badge-' + ${s.type.badgeClass}" th:text="${s.type.icon} + ' ' + ${s.type.label}"></span></td>
+            <td class="fw-bold" th:text="${#numbers.formatCurrency(s.value)}">0,00 €</td>
+            <td class="text-muted" th:text="${#temporals.format(s.occurrenceDate,'dd/MM/yyyy')}"></td>
+            <td>
+              <div class="flex gap-1">
+                <th:block th:if="${#authentication?.principal?.canReview()}">
+                  <form th:action="@{/manager/submissions/{id}/review(id=${s.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="status" value="APPROVED"/>
+                    <button type="submit" class="btn btn-success btn-sm" data-confirm="✓?">✓</button>
+                  </form>
+                  <form th:action="@{/manager/submissions/{id}/review(id=${s.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="status" value="REJECTED"/>
+                    <button type="submit" class="btn btn-danger btn-sm" data-confirm="✗?">✗</button>
+                  </form>
+                </th:block>
+                <a th:href="@{/manager/submissions/{id}(id=${s.id})}" class="btn btn-ghost btn-sm">👁</a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card fade-in">
+  <div class="card-head">
+    <div class="card-title" th:text="#{manager.dashboard.team}">Equipe</div>
+    <a th:href="@{/manager/employees}" class="btn btn-ghost btn-sm" th:text="#{btn.manage}">Gerenciar</a>
+  </div>
+  <div class="card-body">
+    <div th:if="${#lists.isEmpty(employees)}" class="empty">
+      <div class="empty-icon">👥</div>
+      <div class="empty-text" th:text="#{manager.dashboard.noEmployees}">Nenhum funcionário cadastrado ainda</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+      <div th:each="emp : ${employees}"
+           style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div class="flex items-center gap-1" style="margin-bottom:12px">
+          <div class="avatar" th:text="${emp.initials}">XX</div>
+          <div>
+            <div class="fw-bold" style="font-size:13px" th:text="${emp.name}">Nome</div>
+            <div class="text-muted" style="font-size:11px" th:text="${emp.email}">email</div>
+          </div>
+          <span class="badge badge-success" style="margin-left:auto">● <span th:text="#{manager.templates.active}">Ativo</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</content>
+</th:block>
+</body>
+</html>

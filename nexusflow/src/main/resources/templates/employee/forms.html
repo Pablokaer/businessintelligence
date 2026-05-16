@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.fillForm}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<div class="card fade-in">
+  <div class="card-head">
+    <div class="card-title" th:text="#{employee.forms.title}">Formulários disponíveis</div>
+    <span class="badge badge-primary" th:text="${#lists.size(templates)} + ' ' + #{lbl.records}"></span>
+  </div>
+  <div class="card-body">
+    <div th:if="${#lists.isEmpty(templates)}" class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text" th:text="#{employee.forms.none}">Nenhum formulário disponível</div>
+      <div class="text-muted" style="font-size:13px" th:text="#{employee.forms.waitManager}">Aguarde seu gerente criar formulários.</div>
+    </div>
+    <div class="grid-2" th:unless="${#lists.isEmpty(templates)}">
+      <div th:each="t : ${templates}"
+           style="background:var(--surface2);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px">
+        <div class="fw-bold" style="font-size:16px" th:text="${t.name}"></div>
+        <div class="text-muted" style="font-size:13px;flex:1" th:text="${t.description ?: '—'}"></div>
+        <div style="font-size:12px;color:var(--muted)">
+          <span th:text="${#lists.size(t.fields)} + ' ' + #{lbl.records}"></span>
+        </div>
+        <a th:href="@{/employee/forms/{id}/fill(id=${t.id})}" class="btn btn-primary btn-sm"
+           th:text="#{employee.forms.fill}">✏️ Preencher</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</content>
+</th:block>
+</body>
+</html>

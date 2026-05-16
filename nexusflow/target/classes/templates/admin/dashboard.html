@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.globalDashboard}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<form method="get" th:action="@{/admin/dashboard}" style="margin-bottom:16px">
+  <div class="grid-2" style="align-items:start">
+
+    <div class="card fade-in">
+      <div class="card-head">
+        <div class="card-title">📅 <span th:text="#{lbl.dateRange}">Período</span></div>
+      </div>
+      <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:120px">
+          <label class="form-label" th:text="#{lbl.from}">De</label>
+          <input type="date" name="from" class="form-control"
+                 th:value="${#temporals.format(from,'yyyy-MM-dd')}"/>
+        </div>
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:120px">
+          <label class="form-label" th:text="#{lbl.to}">Até</label>
+          <input type="date" name="to" class="form-control"
+                 th:value="${#temporals.format(to,'yyyy-MM-dd')}"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in d2">
+      <div class="card-head">
+        <div class="card-title">👥 <span th:text="#{admin.dashboard.selectedOwners}">Owners selecionados</span></div>
+        <button type="submit" class="btn btn-primary btn-sm" th:text="#{btn.apply}">Aplicar</button>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <label th:each="o : ${owners}"
+                 style="display:flex;align-items:center;gap:6px;background:var(--surface2);
+                        padding:4px 10px;border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="ownerIds" th:value="${o.id}"
+                   th:checked="${selectedOwnerIds.contains(o.id)}"/>
+            <span th:text="${o.initials}"
+                  class="avatar" style="width:22px;height:22px;font-size:9px;flex-shrink:0"></span>
+            <span th:text="${o.name}"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<div style="margin-bottom:8px;font-size:12px;color:var(--muted)">
+  <span th:text="#{admin.dashboard.compiledSummary}">Resumo compilado</span> —
+  <span th:text="${#lists.size(selectedOwnerIds)}">0</span> <span th:text="#{admin.dashboard.ownersSelected}">owner(s) selecionado(s)</span> ·
+  <span th:text="${#temporals.format(compiled.from,'dd/MM/yyyy')}"></span> a
+  <span th:text="${#temporals.format(compiled.to,'dd/MM/yyyy')}"></span>
+</div>
+<div class="stats-grid" style="margin-bottom:24px">
+  <div class="stat-card fade-in d1">
+    <div class="stat-icon">💰</div>
+    <div class="stat-label" th:text="#{kpi.revenue}">Receita Total</div>
+    <div class="stat-value text-green" th:text="${#numbers.formatCurrency(compiled.totalSales)}">R$ 0</div>
+  </div>
+  <div class="stat-card fade-in d2">
+    <div class="stat-icon">📤</div>
+    <div class="stat-label" th:text="#{kpi.expenses}">Despesas</div>
+    <div class="stat-value text-red" th:text="${#numbers.formatCurrency(compiled.totalExpenses)}">R$ 0</div>
+  </div>
+  <div class="stat-card fade-in d3">
+    <div class="stat-icon">📈</div>
+    <div class="stat-label" th:text="#{kpi.netProfit}">Lucro Líquido</div>
+    <div class="stat-value text-accent" th:text="${#numbers.formatCurrency(compiled.netBalance)}">R$ 0</div>
+  </div>
+  <div class="stat-card fade-in d4">
+    <div class="stat-icon">⏳</div>
+    <div class="stat-label" th:text="#{kpi.pending}">Pendentes</div>
+    <div class="stat-value text-yellow" th:text="${compiled.pendingCount}">0</div>
+  </div>
+</div>
+
+<div class="card fade-in">
+  <div class="card-head">
+    <div class="card-title" th:text="#{admin.dashboard.breakdown}">Breakdown por Owner</div>
+  </div>
+  <div class="card-body" th:if="${#lists.isEmpty(ownerStats)}">
+    <div class="empty">
+      <div class="empty-icon">🌐</div>
+      <div class="empty-text" th:text="#{admin.dashboard.noOwners}">Nenhum owner encontrado</div>
+      <div style="margin-top:12px">
+        <a th:href="@{/admin/owners}" class="btn btn-primary btn-sm"
+           th:text="#{admin.dashboard.createOwner}">Criar Owner</a>
+      </div>
+    </div>
+  </div>
+  <div class="table-wrap" th:unless="${#lists.isEmpty(ownerStats)}">
+    <table>
+      <thead>
+        <tr>
+          <th>Owner</th>
+          <th th:text="#{kpi.revenue}">Receita</th>
+          <th th:text="#{kpi.expenses}">Despesas</th>
+          <th th:text="#{kpi.services}">Serviços</th>
+          <th th:text="#{kpi.refunds}">Reembolsos</th>
+          <th th:text="#{kpi.profit}">Lucro</th>
+          <th th:text="#{kpi.pending}">Pendentes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="s : ${ownerStats}">
+          <td>
+            <div class="flex items-center gap-1">
+              <div class="avatar" style="width:28px;height:28px;font-size:10px"
+                   th:text="${s.owner.initials}">XX</div>
+              <div>
+                <div class="fw-bold" style="font-size:13px" th:text="${s.owner.name}"></div>
+                <div class="text-muted" style="font-size:11px" th:text="${s.owner.email}"></div>
+              </div>
+            </div>
+          </td>
+          <td class="text-green fw-bold" th:text="${#numbers.formatCurrency(s.sales)}"></td>
+          <td class="text-red"           th:text="${#numbers.formatCurrency(s.expenses)}"></td>
+          <td                            th:text="${#numbers.formatCurrency(s.services)}"></td>
+          <td class="text-muted"         th:text="${#numbers.formatCurrency(s.refunds)}"></td>
+          <td th:class="'fw-bold ' + ${s.netBalance.signum() >= 0 ? 'text-green' : 'text-red'}"
+              th:text="${#numbers.formatCurrency(s.netBalance)}"></td>
+          <td>
+            <span th:if="${s.pendingCount > 0}"
+                  class="badge badge-warning" th:text="${s.pendingCount} + ' pend.'"></span>
+            <span th:if="${s.pendingCount == 0}" class="text-muted">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</content>
+</th:block>
+</body>
+</html>

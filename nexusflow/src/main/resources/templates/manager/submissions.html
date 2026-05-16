@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.submissions}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="card-body" style="padding:16px 20px">
+    <form th:action="@{/manager/submissions}" method="get" th:object="${filter}"
+          style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="margin:0;flex:1;min-width:120px">
+        <label class="form-label" th:text="#{lbl.employee}">Funcionário</label>
+        <select th:field="*{employeeId}" class="form-control form-select">
+          <option value="" th:text="#{lbl.all}">Todos</option>
+          <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.name}"></option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:120px">
+        <label class="form-label" th:text="#{lbl.type}">Tipo</label>
+        <select th:field="*{type}" class="form-control form-select">
+          <option value="" th:text="#{lbl.all}">Todos</option>
+          <option th:each="t : ${types}" th:value="${t}" th:text="${t.label}"></option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:120px">
+        <label class="form-label" th:text="#{lbl.status}">Status</label>
+        <select th:field="*{status}" class="form-control form-select">
+          <option value="" th:text="#{lbl.all}">Todos</option>
+          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}"></option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;min-width:130px">
+        <label class="form-label" th:text="#{lbl.from}">De</label>
+        <input type="date" th:field="*{from}" class="form-control"/>
+      </div>
+      <div class="form-group" style="margin:0;min-width:130px">
+        <label class="form-label" th:text="#{lbl.to}">Até</label>
+        <input type="date" th:field="*{to}" class="form-control"/>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="submit" class="btn btn-primary" th:text="#{btn.filter}">Filtrar</button>
+        <a th:href="@{/manager/submissions}" class="btn btn-ghost" th:text="#{btn.clear}">Limpar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="section-header">
+  <div class="section-title" th:text="#{manager.submissions.title}">Formulários</div>
+  <span class="badge badge-muted" th:text="${page.totalElements} + ' ' + #{lbl.records}"></span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th th:text="#{lbl.number}">Nº</th>
+        <th th:text="#{lbl.employee}">Funcionário</th>
+        <th th:text="#{lbl.type}">Tipo</th>
+        <th th:text="#{lbl.description}">Descrição</th>
+        <th th:text="#{lbl.value}">Valor</th>
+        <th th:text="#{lbl.hours}">Horas</th>
+        <th th:text="#{lbl.date}">Data</th>
+        <th th:text="#{lbl.status}">Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:if="${page.empty}">
+        <td colspan="9" class="empty">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text" th:text="#{manager.submissions.noRecords}">Nenhum registro encontrado</div>
+        </td>
+      </tr>
+      <tr th:each="s : ${page.content}">
+        <td class="td-mono" th:text="${s.formNumber}">F-0001</td>
+        <td>
+          <div class="flex items-center gap-1">
+            <div class="avatar" style="width:26px;height:26px;font-size:10px" th:text="${s.user.initials}">XX</div>
+            <span th:text="${s.user.name}">Nome</span>
+          </div>
+        </td>
+        <td><span th:class="'badge badge-' + ${s.type.badgeClass}" th:text="${s.type.icon} + ' ' + ${s.type.label}"></span></td>
+        <td class="text-muted" th:text="${#strings.abbreviate(s.description, 35)}">desc</td>
+        <td th:class="${s.type.name() == 'EXPENSE' or s.type.name() == 'REFUND'} ? 'fw-bold text-red' : 'fw-bold text-green'"
+            th:text="${#numbers.formatCurrency(s.value)}">0,00 €</td>
+        <td class="text-muted" th:text="${s.hours} + 'h'">0h</td>
+        <td class="text-muted" th:text="${#temporals.format(s.occurrenceDate,'dd/MM/yy')}"></td>
+        <td><span th:class="'badge badge-' + ${s.status.badgeClass}" th:text="${s.status.label}"></span></td>
+        <td>
+          <a th:href="@{/manager/submissions/{id}(id=${s.id})}" class="btn btn-ghost btn-sm" th:text="#{btn.view}">Ver →</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div th:if="${page.totalPages > 1}" class="pagination">
+  <a th:href="@{/manager/submissions(page=${page.number - 1}, size=${page.size})}"
+     th:class="${page.first} ? 'page-btn disabled' : 'page-btn'">‹</a>
+  <th:block th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
+    <a th:href="@{/manager/submissions(page=${i}, size=${page.size})}"
+       th:class="${i == page.number} ? 'page-btn active' : 'page-btn'"
+       th:text="${i + 1}"></a>
+  </th:block>
+  <a th:href="@{/manager/submissions(page=${page.number + 1}, size=${page.size})}"
+     th:class="${page.last} ? 'page-btn disabled' : 'page-btn'">›</a>
+</div>
+
+</content>
+</th:block>
+</body>
+</html>

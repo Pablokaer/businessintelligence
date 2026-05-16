@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(java *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(docker-compose *)",
+      "PowerShell(docker exec nexusflow-db *)",
+      "PowerShell(netstat *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(& \"C:\\\\Windows\\\\System32\\\\TASKLIST.exe\" /FO CSV | ConvertFrom-Csv | Where-Object { $_.\"PID\" -in @\\(\"9100\",\"30620\"\\) })"
+    ]
+  }
+}

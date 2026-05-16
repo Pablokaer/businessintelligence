@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<th:block th:fragment="page(title, content)">
+<!DOCTYPE html>
+<html th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="_csrf"       th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title th:text="${title} + ' — NexusFlow'">NexusFlow</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>"/>
+  <!-- Apply saved theme before first paint -->
+  <script>if(localStorage.getItem('nf-theme')==='light')document.documentElement.classList.add('light')</script>
+</head>
+<body>
+
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<!-- ── Sidebar ──────────────────────────────────────── -->
+<th:block sec:authorize="hasRole('SUPER_ADMIN')">
+  <nav th:replace="~{fragments/sidebar-developer :: sidebar}"></nav>
+</th:block>
+<th:block sec:authorize="hasAuthority('ACCESS_OWNER')">
+  <nav th:replace="~{fragments/sidebar-owner :: sidebar}"></nav>
+</th:block>
+<th:block sec:authorize="hasAuthority('ACCESS_SUBMANAGER') or hasAuthority('ACCESS_SENIOR')">
+  <nav th:replace="~{fragments/sidebar-employee :: sidebar}"></nav>
+</th:block>
+<th:block sec:authorize="hasAuthority('ACCESS_STANDARD')">
+  <nav th:replace="~{fragments/sidebar-standard :: sidebar}"></nav>
+</th:block>
+
+<!-- ── Main ─────────────────────────────────────────── -->
+<div class="main">
+  <div class="topbar">
+    <button id="menuToggle" class="menu-toggle">☰</button>
+    <div class="topbar-title" th:text="${title}">Página</div>
+    <span th:with="lvl=${#authentication?.principal?.accessLevel}"
+          th:if="${lvl != null}"
+          th:class="'badge badge-' + ${lvl.badgeClass}"
+          th:text="${lvl.icon} + ' ' + ${lvl.label}"></span>
+    <th:block sec:authorize="hasRole('EMPLOYEE') and !hasAuthority('ACCESS_SUBMANAGER') and !hasAuthority('ACCESS_SENIOR')">
+      <a th:href="@{/employee/submissions/new}" class="btn btn-primary btn-sm" th:text="#{btn.newRecord}">+ Novo</a>
+    </th:block>
+
+    <div class="topbar-controls">
+      <button id="themeToggle" class="theme-btn" title="Toggle theme">🌙</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <th:block th:replace="${content}"/>
+  </div>
+</div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
+</th:block>
+</html>

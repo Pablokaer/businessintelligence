@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{manager.submission.formData}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+  <a th:href="@{/manager/submissions}" class="btn btn-ghost btn-sm" th:text="#{btn.back}">← Voltar</a>
+  <h2 style="font-family:var(--font-head);font-size:20px;font-weight:700"
+      th:text="${submission.formNumber}">F-0001</h2>
+  <span th:class="'badge badge-' + ${submission.status.badgeClass}"
+        th:text="${submission.status.label}"></span>
+</div>
+
+<div class="grid-2" style="gap:18px">
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title" th:text="#{manager.submission.formData}">Dados do Formulário</div>
+      <span th:class="'badge badge-' + ${submission.type.badgeClass}"
+            th:text="${submission.type.icon} + ' ' + ${submission.type.label}"></span>
+    </div>
+    <div class="card-body">
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted);width:40%" th:text="#{lbl.employee}">Funcionário</td>
+          <td style="padding:10px 0" th:text="${submission.user.name}"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{lbl.value}">Valor</td>
+          <td style="padding:10px 0;font-weight:700;font-size:20px"
+              th:class="${submission.type.name() == 'EXPENSE'} ? 'text-red' : 'text-green'"
+              th:text="${#numbers.formatCurrency(submission.value)}"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{lbl.hours}">Horas</td>
+          <td style="padding:10px 0" th:text="${submission.hours} + 'h'"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{lbl.date}">Data</td>
+          <td style="padding:10px 0"
+              th:text="${#temporals.format(submission.occurrenceDate,'dd/MM/yyyy')}"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{lbl.category}">Categoria</td>
+          <td style="padding:10px 0">
+            <span class="badge badge-primary" th:text="${submission.category}"></span>
+          </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{lbl.rating}">Avaliação</td>
+          <td style="padding:10px 0">
+            <span class="stars"
+                  th:text="${'⭐'.repeat(submission.satisfaction != null ? submission.satisfaction : 0)}"></span>
+            <span class="text-muted" th:if="${submission.satisfaction != null}"
+                  th:text="' (' + ${submission.satisfaction} + '/5)'"></span>
+          </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{lbl.description}">Descrição</td>
+          <td style="padding:10px 0" th:text="${submission.description}"></td>
+        </tr>
+        <tr th:if="${submission.notes != null and !#strings.isEmpty(submission.notes)}">
+          <td style="padding:10px 0;color:var(--muted)" th:text="#{manager.submission.obs}">Obs.</td>
+          <td style="padding:10px 0" th:text="${submission.notes}"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div th:if="${submission.status.name() != 'PENDING'}" class="card" style="margin-bottom:14px">
+      <div class="card-head"><div class="card-title" th:text="#{manager.submission.review}">Revisão</div></div>
+      <div class="card-body">
+        <div th:class="${submission.status.name() == 'APPROVED'} ? 'alert alert-success' : 'alert alert-danger'">
+          <span th:text="${submission.status.name() == 'APPROVED'} ? #{manager.submission.approvedLabel} : #{manager.submission.rejectedLabel}"></span>
+        </div>
+        <div th:if="${submission.reviewedBy != null}" class="text-muted" style="font-size:12px">
+          <span th:text="#{manager.submission.reviewedBy}"></span>
+          <strong th:text="${submission.reviewedBy.name}"></strong>
+          <span th:text="${#temporals.format(submission.reviewedAt,'dd/MM/yyyy HH:mm')}"></span>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${submission.status.name() == 'PENDING' and actor.canReview()}" class="card">
+      <div class="card-head">
+        <div class="card-title" th:text="#{manager.submission.reviewForm}">Revisar Formulário</div>
+        <span class="badge badge-warning" th:text="#{manager.submission.awaiting}">Aguardando</span>
+      </div>
+      <div class="card-body">
+        <form th:action="@{/manager/submissions/{id}/review(id=${submission.id})}"
+              method="post" th:object="${reviewForm}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-group">
+            <label class="form-label" th:text="#{manager.submission.decision}">Decisão *</label>
+            <select th:field="*{status}" class="form-control form-select">
+              <option value="APPROVED" th:text="#{manager.submission.approve}">✓ Aprovar</option>
+              <option value="REJECTED" th:text="#{manager.submission.reject}">✗ Rejeitar</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" th:text="#{lbl.notes}">Observações (opcional)</label>
+            <textarea th:field="*{notes}" class="form-control"
+                      th:placeholder="#{manager.submission.justification}"></textarea>
+          </div>
+
+          <div class="flex gap-1">
+            <button type="submit" class="btn btn-primary" style="flex:1" th:text="#{btn.confirm}">Confirmar</button>
+            <a th:href="@{/manager/submissions}" class="btn btn-ghost" th:text="#{btn.cancel}">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div th:if="${submission.status.name() == 'PENDING' and !actor.canReview()}"
+         class="alert alert-warning" style="margin-bottom:14px"
+         th:text="#{manager.submission.viewOnly}">
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><div class="card-title" th:text="#{manager.submission.metadata}">Metadados</div></div>
+      <div class="card-body">
+        <div class="text-muted" style="font-size:12px;line-height:2">
+          <div>ID: <span class="td-mono" th:text="${submission.id}"></span></div>
+          <div><span th:text="#{manager.submission.createdAt}">Criado em</span>:
+            <span th:text="${#temporals.format(submission.createdAt,'dd/MM/yyyy HH:mm')}"></span></div>
+          <div><span th:text="#{manager.submission.updatedAt}">Atualizado</span>:
+            <span th:text="${#temporals.format(submission.updatedAt,'dd/MM/yyyy HH:mm')}"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</content>
+</th:block>
+</body>
+</html>

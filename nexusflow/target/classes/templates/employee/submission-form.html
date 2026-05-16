@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{submission.form.title}, content=~{::content})}">
+<content>
+
+<div style="max-width:680px;margin:0 auto">
+
+  <div style="margin-bottom:22px">
+    <a th:href="@{/employee/submissions}" class="btn btn-ghost btn-sm" th:text="#{btn.back}">← Voltar</a>
+  </div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-title" th:text="#{submission.form.title}">Registrar Ocorrência</div>
+      <span class="badge badge-warning" th:text="#{submission.form.pendingNote}">Pendente após envio</span>
+    </div>
+    <div class="card-body">
+
+      <form th:action="@{/employee/submissions/new}" method="post" th:object="${form}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div class="form-group">
+          <label class="form-label" th:text="#{submission.form.type}">Tipo de Registro *</label>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:4px">
+            <th:block th:each="t : ${types}">
+              <label style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .2s"
+                     th:style="${#fields.hasErrors('type')} ? 'border-color:var(--red)' : ''"
+                     th:id="'lbl-' + ${t.name()}">
+                <input type="radio" th:field="*{type}" th:value="${t.name()}"
+                       style="display:none"
+                       th:id="'type-' + ${t.name()}"/>
+                <span style="font-size:22px" th:text="${t.icon}"></span>
+                <span style="font-size:13px;font-weight:600" th:text="${t.label}"></span>
+              </label>
+            </th:block>
+          </div>
+          <div class="field-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" th:text="#{submission.form.value}">Valor (R$) *</label>
+            <input type="number" step="0.01" min="0.01" th:field="*{value}"
+                   class="form-control"
+                   th:classappend="${#fields.hasErrors('value')} ? ' is-invalid'"
+                   placeholder="0,00"/>
+            <div class="field-error" th:if="${#fields.hasErrors('value')}" th:errors="*{value}"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" th:text="#{submission.form.hours}">Horas trabalhadas *</label>
+            <input type="number" step="0.5" min="0.5" max="99" th:field="*{hours}"
+                   class="form-control"
+                   th:classappend="${#fields.hasErrors('hours')} ? ' is-invalid'"
+                   placeholder="0.0"/>
+            <div class="field-error" th:if="${#fields.hasErrors('hours')}" th:errors="*{hours}"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" th:text="#{submission.form.description}">Descrição *</label>
+          <input type="text" th:field="*{description}" class="form-control"
+                 th:classappend="${#fields.hasErrors('description')} ? ' is-invalid'"
+                 th:placeholder="#{submission.form.descPh}"/>
+          <div class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" th:text="#{submission.form.category}">Categoria *</label>
+            <select th:field="*{category}" class="form-control form-select"
+                    th:classappend="${#fields.hasErrors('category')} ? ' is-invalid'">
+              <option value="" th:text="#{submission.form.selectCategory}">Selecione...</option>
+              <option th:each="c : ${ {'Varejo','E-commerce','Serviços','Logística','Manutenção','Operacional','Outros'} }"
+                      th:value="${c}" th:text="${c}"></option>
+            </select>
+            <div class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" th:text="#{submission.form.occurrenceDate}">Data da Ocorrência *</label>
+            <input type="date" th:field="*{occurrenceDate}" class="form-control"
+                   th:classappend="${#fields.hasErrors('occurrenceDate')} ? ' is-invalid'"/>
+            <div class="field-error" th:if="${#fields.hasErrors('occurrenceDate')}" th:errors="*{occurrenceDate}"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" th:text="#{submission.form.rating}">Avaliação do Atendimento ⭐</label>
+          <select th:field="*{satisfaction}" class="form-control form-select">
+            <option value="" th:text="#{submission.form.noRating}">Não avaliar</option>
+            <option value="1">⭐ (1/5)</option>
+            <option value="2">⭐⭐ (2/5)</option>
+            <option value="3">⭐⭐⭐ (3/5)</option>
+            <option value="4">⭐⭐⭐⭐ (4/5)</option>
+            <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" th:text="#{submission.form.notes}">Observações adicionais</label>
+          <textarea th:field="*{notes}" class="form-control"
+                    th:placeholder="#{submission.form.notesPh}"></textarea>
+        </div>
+
+        <div class="flex gap-1" style="margin-top:8px">
+          <a th:href="@{/employee/submissions}" class="btn btn-ghost" style="flex:1;justify-content:center"
+             th:text="#{btn.cancel}">Cancelar</a>
+          <button type="submit" class="btn btn-primary" style="flex:2" th:text="#{submission.form.send}">
+            Enviar Formulário →
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('input[type="radio"][name="type"]').forEach(function(radio) {
+  function update() {
+    document.querySelectorAll('input[type="radio"][name="type"]').forEach(function(r) {
+      var lbl = document.getElementById('lbl-' + r.value);
+      if (lbl) lbl.style.borderColor = r.checked ? 'var(--accent)' : 'var(--border)';
+    });
+  }
+  radio.addEventListener('change', update);
+  if (radio.checked) {
+    var lbl = document.getElementById('lbl-' + radio.value);
+    if (lbl) lbl.style.borderColor = 'var(--accent)';
+  }
+});
+</script>
+
+</content>
+</th:block>
+</body>
+</html>

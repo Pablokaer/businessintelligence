@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${draft.template.name} + ' — Formulário'">Formulário</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <style>
+    body { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center;
+           padding: 32px 16px; background: var(--bg, #f1f5f9); }
+    .guest-wrap { width: 100%; max-width: 600px; }
+    .guest-brand { text-align: center; margin-bottom: 24px; color: var(--muted, #64748b);
+                   font-size: 13px; }
+    .guest-brand strong { display: block; font-size: 22px; color: var(--text, #0f172a);
+                          margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="guest-wrap">
+
+  <div class="guest-brand">
+    <strong th:text="${draft.template.name}">Formulário</strong>
+    <span th:text="${draft.template.description ?: ''}"></span>
+  </div>
+
+  <div th:if="${errorMsg}" class="alert alert-danger" style="margin-bottom:16px">
+    ⚠️ <span th:text="${errorMsg}"></span>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form th:action="@{/guest/form/{token}(token=${draft.shareToken})}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div th:if="${#lists.isEmpty(draft.template.fields)}"
+             style="text-align:center;padding:32px;color:var(--muted)">
+          Este formulário não possui campos para preencher.
+        </div>
+
+        <div th:each="field, stat : ${draft.template.fields}" class="form-group">
+          <input type="hidden" th:name="${'responses[' + stat.index + '].fieldId'}"
+                 th:value="${field.id}"/>
+
+          <label class="form-label">
+            <span th:text="${field.label}"></span>
+            <span th:if="${field.required}" style="color:var(--danger,#dc2626)"> *</span>
+          </label>
+
+          <input th:if="${field.fieldType.name() == 'TEXT'}"
+                 type="text" class="form-control"
+                 th:name="${'responses[' + stat.index + '].response'}"
+                 th:required="${field.required}"/>
+
+          <textarea th:if="${field.fieldType.name() == 'TEXTAREA'}"
+                    class="form-control" rows="4"
+                    th:name="${'responses[' + stat.index + '].response'}"
+                    th:required="${field.required}"></textarea>
+
+          <input th:if="${field.fieldType.name() == 'NUMBER'}"
+                 type="number" step="any" class="form-control"
+                 th:name="${'responses[' + stat.index + '].response'}"
+                 th:required="${field.required}"/>
+
+          <input th:if="${field.fieldType.name() == 'DATE'}"
+                 type="date" class="form-control"
+                 th:name="${'responses[' + stat.index + '].response'}"
+                 th:required="${field.required}"/>
+
+          <select th:if="${field.fieldType.name() == 'SELECT'}"
+                  class="form-control"
+                  th:name="${'responses[' + stat.index + '].response'}"
+                  th:required="${field.required}">
+            <option value="">Selecione…</option>
+            <option th:each="opt : ${field.optionsArray}" th:value="${opt}" th:text="${opt}"></option>
+          </select>
+
+          <div th:if="${field.fieldType.name() == 'RADIO'}"
+               style="display:flex;flex-direction:column;gap:4px">
+            <label th:each="opt : ${field.optionsArray}"
+                   style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+              <input type="radio"
+                     th:name="${'responses[' + stat.index + '].response'}"
+                     th:value="${opt}"
+                     style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);flex-shrink:0"/>
+              <span th:text="${opt}"></span>
+            </label>
+          </div>
+
+          <div th:if="${field.fieldType.name() == 'CHECKBOX'}"
+               class="chk-group"
+               th:attr="data-target=${'chkHidden_' + stat.index}"
+               style="display:flex;flex-direction:column;gap:4px">
+            <input type="hidden"
+                   th:id="${'chkHidden_' + stat.index}"
+                   th:name="${'responses[' + stat.index + '].response'}"
+                   value=""/>
+            <label th:each="opt : ${field.optionsArray}"
+                   style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+              <input type="checkbox" class="chk-item" th:value="${opt}"
+                     style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);flex-shrink:0"/>
+              <span th:text="${opt}"></span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-w" style="margin-top:8px">
+          ✅ Enviar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">
+    Este formulário foi gerado pelo sistema NexusFlow.
+  </div>
+
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('.chk-group').forEach(function(group) {
+    var hidden = document.getElementById(group.getAttribute('data-target'));
+    group.querySelectorAll('.chk-item').forEach(function(chk) {
+      chk.addEventListener('change', function() {
+        hidden.value = Array.from(group.querySelectorAll('.chk-item:checked'))
+          .map(function(c){ return c.value; }).join(', ');
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

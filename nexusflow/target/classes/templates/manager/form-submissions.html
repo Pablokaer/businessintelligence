@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.serviceRecords}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<form method="get" th:action="@{/manager/form-submissions}" class="card fade-in" style="margin-bottom:16px">
+  <div class="card-head"><div class="card-title">🔍 Filtros</div></div>
+  <div class="card-body" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end">
+    <div class="form-group" style="margin:0;min-width:140px">
+      <label class="form-label" th:text="#{lbl.status}">Status</label>
+      <select name="status" class="form-control">
+        <option value="" th:text="#{lbl.all}">Todos</option>
+        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}"
+                th:selected="${filter.status == s}"></option>
+      </select>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label class="form-label" th:text="#{lbl.from}">De</label>
+      <input type="date" name="from" class="form-control"
+             th:value="${filter.from != null ? #temporals.format(filter.from,'yyyy-MM-dd') : ''}"/>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label class="form-label" th:text="#{lbl.to}">Até</label>
+      <input type="date" name="to" class="form-control"
+             th:value="${filter.to != null ? #temporals.format(filter.to,'yyyy-MM-dd') : ''}"/>
+    </div>
+    <button type="submit" class="btn btn-primary" style="height:38px" th:text="#{btn.apply}">Aplicar</button>
+    <a th:href="@{/manager/form-submissions}" class="btn btn-outline" style="height:38px;line-height:22px"
+       th:text="#{btn.clear}">Limpar</a>
+  </div>
+</form>
+
+<div class="card fade-in">
+  <div class="card-head">
+    <div class="card-title" th:text="#{manager.formSub.title}">Registros de Serviço</div>
+    <span class="badge badge-primary" th:text="${page.totalElements} + ' ' + #{lbl.records}"></span>
+  </div>
+  <div th:if="${page.isEmpty()}" class="card-body">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text" th:text="#{manager.formSub.noRecords}">Nenhum registro encontrado</div>
+    </div>
+  </div>
+  <div class="table-wrap" th:unless="${page.isEmpty()}">
+    <table>
+      <thead>
+        <tr>
+          <th th:text="#{lbl.employee}">Funcionário</th>
+          <th th:text="#{lbl.form}">Formulário</th>
+          <th th:text="#{lbl.date}">Data</th>
+          <th th:text="#{lbl.cost}">Custo</th>
+          <th th:text="#{lbl.hours}">Horas</th>
+          <th th:text="#{lbl.value}">Valor</th>
+          <th th:text="#{lbl.status}">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="s : ${page.content}">
+          <td>
+            <div class="fw-bold" style="font-size:13px" th:text="${s.submittedBy.name}"></div>
+          </td>
+          <td class="text-muted" th:text="${s.template.name}"></td>
+          <td th:text="${#temporals.format(s.occurrenceDate,'dd/MM/yyyy')}"></td>
+          <td th:text="${#numbers.formatCurrency(s.serviceCost)}"></td>
+          <td th:text="${s.serviceHours} + 'h'"></td>
+          <td class="fw-bold text-green" th:text="${#numbers.formatCurrency(s.serviceValue)}"></td>
+          <td>
+            <span th:class="'badge badge-' + ${s.status.badgeClass}" th:text="${s.status.label}"></span>
+          </td>
+          <td>
+            <a th:href="@{/manager/form-submissions/{id}(id=${s.id})}"
+               class="btn btn-sm btn-outline" th:text="#{btn.view}">Ver</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div th:if="${page.totalPages > 1}"
+       class="card-body" style="display:flex;gap:8px;justify-content:center">
+    <a th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+       th:href="@{/manager/form-submissions(page=${i},status=${filter.status},from=${filter.from},to=${filter.to})}"
+       th:text="${i + 1}"
+       th:classappend="${i == page.number} ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'"></a>
+  </div>
+</div>
+
+</content>
+</th:block>
+</body>
+</html>

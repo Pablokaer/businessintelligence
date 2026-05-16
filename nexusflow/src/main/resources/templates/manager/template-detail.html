@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{nav.templates}, content=~{::content})}">
+<content>
+
+<div th:if="${successMsg}" class="alert alert-success" data-auto-dismiss>✅ <span th:text="${successMsg}"></span></div>
+<div th:if="${errorMsg}"   class="alert alert-danger"  data-auto-dismiss>⚠️ <span th:text="${errorMsg}"></span></div>
+
+<div class="card fade-in" style="margin-bottom:16px">
+  <div class="card-head">
+    <div>
+      <div class="card-title" th:text="${template.name}"></div>
+      <div class="text-muted" style="font-size:13px" th:text="${template.description ?: '—'}"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span th:if="${template.active}"    class="badge badge-success" th:text="#{manager.templates.active}">Ativo</span>
+      <span th:unless="${template.active}" class="badge badge-warning" th:text="#{manager.templates.inactive}">Inativo</span>
+      <form th:action="@{/manager/templates/{id}/toggle(id=${template.id})}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-sm btn-outline"
+                th:text="${template.active} ? #{btn.deactivate} : #{btn.activate}"></button>
+      </form>
+      <a th:href="@{/manager/form-submissions(templateId=${template.id})}" class="btn btn-sm btn-outline"
+         th:text="#{manager.template.viewSubmissions}">Ver Registros</a>
+      <a th:href="@{/manager/templates}" class="btn btn-sm btn-primary">✓ Save</a>
+    </div>
+  </div>
+</div>
+
+<div class="card fade-in" style="margin-bottom:16px">
+  <div class="card-head">
+    <div class="card-title" th:text="#{manager.template.fixedFields}">Campos fixos (dashboard)</div>
+  </div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+      <div style="background:var(--surface2);padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" th:text="#{manager.template.fixedTag}">CAMPO FIXO</div>
+        <div class="fw-bold" th:text="#{manager.template.fixedCost}">💰 Custo do Serviço</div>
+        <div style="font-size:12px;color:var(--muted)" th:text="#{manager.template.fixedType.numeric}">Numérico · Obrigatório</div>
+      </div>
+      <div style="background:var(--surface2);padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" th:text="#{manager.template.fixedTag}">CAMPO FIXO</div>
+        <div class="fw-bold" th:text="#{manager.template.fixedHours}">⏱ Horas do Serviço</div>
+        <div style="font-size:12px;color:var(--muted)" th:text="#{manager.template.fixedType.numeric}">Numérico · Obrigatório</div>
+      </div>
+      <div style="background:var(--surface2);padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" th:text="#{manager.template.fixedTag}">CAMPO FIXO</div>
+        <div class="fw-bold" th:text="#{manager.template.fixedValue}">📈 Valor do Serviço</div>
+        <div style="font-size:12px;color:var(--muted)" th:text="#{manager.template.fixedType.numeric}">Numérico · Obrigatório</div>
+      </div>
+      <div style="background:var(--surface2);padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" th:text="#{manager.template.fixedTag}">CAMPO FIXO</div>
+        <div class="fw-bold" th:text="#{manager.template.fixedDate}">📅 Data de Ocorrência</div>
+        <div style="font-size:12px;color:var(--muted)" th:text="#{manager.template.fixedType.date}">Data · Obrigatório</div>
+      </div>
+      <div style="background:var(--surface2);padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" th:text="#{manager.template.fixedTag}">CAMPO FIXO</div>
+        <div class="fw-bold" th:text="#{manager.template.fixedNotes}">📝 Observações</div>
+        <div style="font-size:12px;color:var(--muted)" th:text="#{manager.template.fixedType.text}">Texto longo · Opcional</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="align-items:start">
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-title" th:text="#{manager.template.customFields}">Campos customizados</div>
+      <span class="badge badge-primary" th:text="${#lists.size(template.fields)} + ' ' + #{lbl.records}"></span>
+    </div>
+    <div class="card-body">
+      <div th:if="${#lists.isEmpty(template.fields)}" class="empty">
+        <div class="empty-icon">🔧</div>
+        <div class="empty-text" th:text="#{manager.template.noFields}">Nenhum campo customizado</div>
+        <div class="text-muted" style="font-size:13px" th:text="#{manager.template.addFieldHint}">Adicione campos à direita →</div>
+      </div>
+      <div th:each="field, stat : ${template.fields}"
+           style="display:flex;align-items:start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="background:var(--surface2);border-radius:6px;
+                    padding:4px 8px;font-size:11px;font-weight:600;white-space:nowrap;min-width:80px;text-align:center"
+             th:text="${field.fieldType.label}"></div>
+        <div style="flex:1">
+          <div class="fw-bold" th:text="${field.label}"></div>
+          <div th:if="${field.required}" class="text-muted" style="font-size:12px" th:text="#{lbl.required}">Obrigatório</div>
+          <div th:if="${(field.fieldType.name() == 'SELECT' or field.fieldType.name() == 'RADIO' or field.fieldType.name() == 'CHECKBOX') and field.options != null}"
+               class="text-muted" style="font-size:12px"
+               th:text="${field.options}"></div>
+        </div>
+        <form th:action="@{/manager/templates/{id}/fields/{fid}/remove(id=${template.id},fid=${field.id})}"
+              method="post" style="margin:0">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn btn-sm btn-danger"
+                  onclick="return confirm('Remover campo?')">✕</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card fade-in d2">
+    <div class="card-head">
+      <div class="card-title">Adicionar espaço</div>
+    </div>
+    <div class="card-body">
+      <form th:action="@{/manager/templates/{id}/fields(id=${template.id})}" method="post"
+            th:object="${fieldForm}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" id="selectedFieldType" name="fieldType" value="TEXT"/>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de campo</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+            <div class="ftype-card" data-type="TEXT"
+                 style="border:2px solid var(--primary);background:var(--surface2);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s">
+              <div style="font-size:20px;font-weight:700;margin-bottom:4px;line-height:1">Aa</div>
+              <div style="font-size:12px;color:var(--muted)">Resposta curta</div>
+            </div>
+
+            <div class="ftype-card" data-type="TEXTAREA"
+                 style="border:2px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s">
+              <div style="font-size:20px;font-weight:700;margin-bottom:4px;line-height:1">¶</div>
+              <div style="font-size:12px;color:var(--muted)">Parágrafo</div>
+            </div>
+
+            <div class="ftype-card" data-type="RADIO"
+                 style="border:2px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s">
+              <div style="font-size:20px;font-weight:700;margin-bottom:4px;line-height:1">◉</div>
+              <div style="font-size:12px;color:var(--muted)">Múltipla escolha</div>
+            </div>
+
+            <div class="ftype-card" data-type="CHECKBOX"
+                 style="border:2px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s">
+              <div style="font-size:20px;font-weight:700;margin-bottom:4px;line-height:1">☑</div>
+              <div style="font-size:12px;color:var(--muted)">Caixas de seleção</div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Pergunta</label>
+          <input type="text" th:field="*{label}" class="form-control"
+                 th:classappend="${#fields.hasErrors('label')} ? 'is-invalid'"
+                 placeholder="Ex: O cliente tem alguma alergia?"/>
+          <div th:if="${#fields.hasErrors('label')}" class="form-error" th:errors="*{label}"></div>
+        </div>
+
+        <div class="form-group" id="optionsGroup" style="display:none">
+          <label class="form-label">Opções <span class="text-muted" style="font-size:11px">(separadas por vírgula)</span></label>
+          <input type="text" th:field="*{options}" class="form-control"
+                 placeholder="Ex: Sim, Não, Não sei"/>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" th:field="*{required}"/>
+            <span class="form-label" style="margin:0">Campo obrigatório</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-w">+ Adicionar espaço</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;display:flex;justify-content:flex-end">
+  <a th:href="@{/manager/templates}" class="btn btn-primary" style="min-width:160px;justify-content:center">
+    ✓ Save
+  </a>
+</div>
+
+<script>
+(function(){
+  var cards      = document.querySelectorAll('.ftype-card');
+  var hiddenType = document.getElementById('selectedFieldType');
+  var optGrp     = document.getElementById('optionsGroup');
+  var OPTS_TYPES = ['RADIO', 'CHECKBOX', 'SELECT'];
+
+  function selectCard(card) {
+    cards.forEach(function(c) {
+      c.style.borderColor = 'var(--border)';
+      c.style.background  = '';
+    });
+    card.style.borderColor = 'var(--primary)';
+    card.style.background  = 'var(--surface2)';
+    hiddenType.value = card.dataset.type;
+    optGrp.style.display = OPTS_TYPES.includes(card.dataset.type) ? '' : 'none';
+  }
+
+  cards.forEach(function(c) { c.addEventListener('click', function(){ selectCard(c); }); });
+})();
+</script>
+</content>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{fragments/layout :: page(title=#{employee.submission.formData}, content=~{::content})}">
+<content>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+  <a th:href="@{/employee/submissions}" class="btn btn-ghost btn-sm" th:text="#{btn.back}">← Voltar</a>
+  <h2 style="font-family:var(--font-head);font-size:20px;font-weight:700"
+      th:text="${submission.formNumber}">F-0001</h2>
+  <span th:class="'badge badge-' + ${submission.status.badgeClass}"
+        th:text="${submission.status.label}"></span>
+</div>
+
+<div style="max-width:640px">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title" th:text="#{employee.submission.formData}">Dados do Formulário</div>
+      <span th:class="'badge badge-' + ${submission.type.badgeClass}"
+            th:text="${submission.type.icon} + ' ' + ${submission.type.label}"></span>
+    </div>
+    <div class="card-body">
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 0;color:var(--muted);width:38%" th:text="#{lbl.value}">Valor</td>
+          <td style="padding:11px 0;font-weight:700;font-size:22px"
+              th:class="${submission.type.name() == 'EXPENSE'} ? 'text-red' : 'text-green'"
+              th:text="${#numbers.formatCurrency(submission.value)}"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 0;color:var(--muted)" th:text="#{lbl.hours}">Horas</td>
+          <td style="padding:11px 0" th:text="${submission.hours} + 'h'"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 0;color:var(--muted)" th:text="#{lbl.date}">Data</td>
+          <td style="padding:11px 0"
+              th:text="${#temporals.format(submission.occurrenceDate,'dd/MM/yyyy')}"></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 0;color:var(--muted)" th:text="#{lbl.category}">Categoria</td>
+          <td style="padding:11px 0">
+            <span class="badge badge-primary" th:text="${submission.category}"></span>
+          </td>
+        </tr>
+        <tr th:if="${submission.satisfaction != null}" style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 0;color:var(--muted)" th:text="#{lbl.rating}">Avaliação</td>
+          <td style="padding:11px 0">
+            <span class="stars" th:text="${'⭐'.repeat(submission.satisfaction)}"></span>
+            <span class="text-muted" th:text="' (' + ${submission.satisfaction} + '/5)'"></span>
+          </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 0;color:var(--muted)" th:text="#{lbl.description}">Descrição</td>
+          <td style="padding:11px 0" th:text="${submission.description}"></td>
+        </tr>
+        <tr th:if="${submission.notes != null and !#strings.isEmpty(submission.notes)}">
+          <td style="padding:11px 0;color:var(--muted)" th:text="#{lbl.notes}">Observações</td>
+          <td style="padding:11px 0" th:text="${submission.notes}"></td>
+        </tr>
+      </table>
+
+      <div th:if="${submission.status.name() != 'PENDING'}"
+           th:class="${submission.status.name() == 'APPROVED'} ? 'alert alert-success mt-2' : 'alert alert-danger mt-2'">
+        <span th:text="${submission.status.name() == 'APPROVED'} ? #{manager.submission.approvedLabel} : #{manager.submission.rejectedLabel}"></span>
+        <span th:if="${submission.reviewedBy != null}" class="text-muted"
+              th:text="' ' + #{employee.submission.reviewedBy(${submission.reviewedBy.name}, ${#temporals.format(submission.reviewedAt,'dd/MM/yyyy')})}"></span>
+      </div>
+
+      <div th:if="${submission.status.name() == 'PENDING'}" class="alert alert-warning mt-2"
+           th:text="#{employee.submission.awaitingManager}">
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</content>
+</th:block>
+</body>
+</html>

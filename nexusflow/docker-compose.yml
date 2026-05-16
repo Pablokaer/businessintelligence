@@ -1,0 +1,36 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexusflow-db
+    environment:
+      POSTGRES_DB: nexusflow
+      POSTGRES_USER: nexusflow
+      POSTGRES_PASSWORD: nexusflow123
+    ports:
+      - "5433:5432"
+    volumes:
+      - nexusflow_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U nexusflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: nexusflow-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_USERNAME: nexusflow
+      DB_PASSWORD: nexusflow123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/nexusflow
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  nexusflow_data:

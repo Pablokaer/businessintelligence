@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="#{error.default} + ' — NexusFlow'">Erro — NexusFlow</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <script>if(localStorage.getItem('nf-theme')==='light')document.documentElement.classList.add('light')</script>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="text-align:center;max-width:420px">
+    <div style="font-size:64px;margin-bottom:16px"
+         th:text="${errorCode == 404} ? '🔍' : '⚠️'">⚠️</div>
+    <h1 style="font-family:var(--font-head);font-size:28px;font-weight:800;margin-bottom:8px"
+        th:text="${errorTitle} ?: #{error.default}">Erro</h1>
+    <p style="color:var(--muted);margin-bottom:28px"
+       th:text="${errorMessage} ?: #{error.defaultMsg}">Algo deu errado.</p>
+    <a href="/" class="btn btn-primary" th:text="#{error.back}">← Voltar ao início</a>
+  </div>
+</div>
+</body>
+</html>

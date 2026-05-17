@@ -86,5 +86,21 @@ public interface FormSubmissionRepository extends JpaRepository<FormSubmission, 
     @Query("SELECT COUNT(fs) FROM FormSubmission fs WHERE fs.submittedBy.id = :userId AND fs.status = :status")
     long countByUserAndStatus(@Param("userId") UUID userId, @Param("status") SubmissionStatus status);
 
+    @Query("""
+        SELECT COUNT(fs) FROM FormSubmission fs
+        WHERE fs.template.owner.id = :ownerId
+          AND fs.occurrenceDate BETWEEN :from AND :to
+    """)
+    long countByOwnerAndDateRange(@Param("ownerId") UUID ownerId,
+                                  @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("""
+        SELECT COALESCE(SUM(fs.serviceHours),0) FROM FormSubmission fs
+        WHERE fs.submittedBy.id = :userId AND fs.status = 'APPROVED'
+          AND fs.occurrenceDate BETWEEN :from AND :to
+    """)
+    BigDecimal sumServiceHoursByUser(@Param("userId") UUID userId,
+                                     @Param("from") LocalDate from, @Param("to") LocalDate to);
+
     void deleteByTemplateId(UUID templateId);
 }

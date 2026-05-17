@@ -7,7 +7,8 @@ public enum FieldType {
     DATE("Data"),
     SELECT("Lista suspensa"),
     RADIO("Múltipla escolha"),
-    CHECKBOX("Caixas de seleção");
+    CHECKBOX("Caixas de seleção"),
+    FILE("Arquivo / Imagem");
 
     private final String label;
 

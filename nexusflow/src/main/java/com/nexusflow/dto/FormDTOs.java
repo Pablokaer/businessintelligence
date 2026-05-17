@@ -138,15 +138,13 @@ public class FormDTOs {
 
     @Data
     public static class FormFillForm {
-        @NotNull @DecimalMin("0") @Digits(integer = 10, fraction = 2)
-        private BigDecimal serviceCost = BigDecimal.ZERO;
         @NotNull @DecimalMin("0") @Digits(integer = 3, fraction = 2)
-        private BigDecimal serviceHours = BigDecimal.ZERO;
+        private BigDecimal serviceHours;
         @NotNull @DecimalMin("0") @Digits(integer = 10, fraction = 2)
-        private BigDecimal serviceValue = BigDecimal.ZERO;
+        private BigDecimal serviceValue;
         @NotNull
-        @DateTimeFormat(iso = ISO.DATE)
-        private LocalDate occurrenceDate = LocalDate.now();
+        @DateTimeFormat(pattern = "dd/MM/yyyy")
+        private LocalDate occurrenceDate;
         @Size(max = 2000)
         private String notes;
         private List<FieldResponseItem> responses = new ArrayList<>();
@@ -154,15 +152,13 @@ public class FormDTOs {
 
     @Data
     public static class ServiceDataForm {
-        @NotNull @DecimalMin("0") @Digits(integer = 10, fraction = 2)
-        private BigDecimal serviceCost = BigDecimal.ZERO;
         @NotNull @DecimalMin("0") @Digits(integer = 3, fraction = 2)
-        private BigDecimal serviceHours = BigDecimal.ZERO;
+        private BigDecimal serviceHours;
         @NotNull @DecimalMin("0") @Digits(integer = 10, fraction = 2)
-        private BigDecimal serviceValue = BigDecimal.ZERO;
+        private BigDecimal serviceValue;
         @NotNull
-        @DateTimeFormat(iso = ISO.DATE)
-        private LocalDate occurrenceDate = LocalDate.now();
+        @DateTimeFormat(pattern = "dd/MM/yyyy")
+        private LocalDate occurrenceDate;
         @Size(max = 2000)
         private String notes;
     }

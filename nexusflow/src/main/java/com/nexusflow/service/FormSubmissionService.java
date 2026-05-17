@@ -2,6 +2,7 @@ package com.nexusflow.service;
 
 import com.nexusflow.dto.FormDTOs;
 import com.nexusflow.entity.*;
+import com.nexusflow.enums.FieldType;
 import com.nexusflow.enums.SubmissionStatus;
 import com.nexusflow.exception.BusinessException;
 import com.nexusflow.exception.NotFoundException;
@@ -11,11 +12,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -23,16 +25,18 @@ public class FormSubmissionService {
 
     private final FormSubmissionRepository repo;
     private final FormTemplateService templateService;
+    private final FileStorageService fileStorageService;
 
     @Transactional
-    public FormSubmission submit(User employee, UUID templateId, FormDTOs.FormFillForm form) {
+    public FormSubmission submit(User employee, UUID templateId, FormDTOs.FormFillForm form,
+                                 Map<String, MultipartFile> fileUploads) {
         FormTemplate template = templateService.findById(templateId);
         if (!template.getActive()) throw new BusinessException("Este formulário não está disponível.");
 
         FormSubmission submission = FormSubmission.builder()
             .template(template)
             .submittedBy(employee)
-            .serviceCost(form.getServiceCost())
+            .serviceCost(BigDecimal.ZERO)
             .serviceHours(form.getServiceHours())
             .serviceValue(form.getServiceValue())
             .occurrenceDate(form.getOccurrenceDate())
@@ -44,18 +48,15 @@ public class FormSubmissionService {
             for (FormDTOs.FieldResponseItem item : form.getResponses()) {
                 if (item.getFieldId() == null || item.getFieldId().isBlank()) continue;
                 UUID fieldId = UUID.fromString(item.getFieldId());
-                template.getFields().stream()
-                    .filter(f -> f.getId().equals(fieldId))
-                    .findFirst()
-                    .ifPresent(field -> {
-                        if (field.getRequired() && (item.getResponse() == null || item.getResponse().isBlank()))
-                            throw new BusinessException("Campo obrigatório: " + field.getLabel());
-                        responses.add(FormFieldResponse.builder()
-                            .submission(submission)
-                            .field(field)
-                            .response(item.getResponse())
-                            .build());
-                    });
+                Optional<FormField> fieldOpt = template.getFields().stream()
+                    .filter(f -> f.getId().equals(fieldId)).findFirst();
+                if (fieldOpt.isEmpty()) continue;
+                FormField field = fieldOpt.get();
+
+                String responseValue = resolveResponse(field, fieldId, item.getResponse(), fileUploads);
+                if (responseValue == null) continue;
+                responses.add(FormFieldResponse.builder()
+                    .submission(submission).field(field).response(responseValue).build());
             }
         }
         submission.setResponses(responses);
@@ -82,7 +83,7 @@ public class FormSubmissionService {
             .submittedBy(employee)
             .status(SubmissionStatus.DRAFT)
             .shareToken(UUID.randomUUID())
-            .serviceCost(form.getServiceCost())
+            .serviceCost(BigDecimal.ZERO)
             .serviceHours(form.getServiceHours())
             .serviceValue(form.getServiceValue())
             .occurrenceDate(form.getOccurrenceDate())
@@ -103,7 +104,8 @@ public class FormSubmissionService {
     }
 
     @Transactional
-    public void submitGuestResponses(UUID token, FormDTOs.GuestFillForm form) {
+    public void submitGuestResponses(UUID token, FormDTOs.GuestFillForm form,
+                                     Map<String, MultipartFile> fileUploads) {
         FormSubmission draft = repo.findByShareToken(token)
             .filter(s -> s.getStatus() == SubmissionStatus.DRAFT)
             .orElseThrow(() -> new com.nexusflow.exception.NotFoundException("Link inválido ou não disponível."));
@@ -117,24 +119,40 @@ public class FormSubmissionService {
             for (FormDTOs.FieldResponseItem item : form.getResponses()) {
                 if (item.getFieldId() == null || item.getFieldId().isBlank()) continue;
                 UUID fieldId = UUID.fromString(item.getFieldId());
-                template.getFields().stream()
-                    .filter(f -> f.getId().equals(fieldId))
-                    .findFirst()
-                    .ifPresent(field -> {
-                        if (field.getRequired() && (item.getResponse() == null || item.getResponse().isBlank()))
-                            throw new BusinessException("Campo obrigatório: " + field.getLabel());
-                        responses.add(FormFieldResponse.builder()
-                            .submission(draft)
-                            .field(field)
-                            .response(item.getResponse())
-                            .build());
-                    });
+                Optional<FormField> fieldOpt = template.getFields().stream()
+                    .filter(f -> f.getId().equals(fieldId)).findFirst();
+                if (fieldOpt.isEmpty()) continue;
+                FormField field = fieldOpt.get();
+
+                String responseValue = resolveResponse(field, fieldId, item.getResponse(), fileUploads);
+                if (responseValue == null) continue;
+                responses.add(FormFieldResponse.builder()
+                    .submission(draft).field(field).response(responseValue).build());
             }
         }
         draft.getResponses().clear();
         draft.getResponses().addAll(responses);
-        // Mantém DRAFT — funcionário confirma e submete manualmente
         repo.save(draft);
+    }
+
+    private String resolveResponse(FormField field, UUID fieldId, String textResponse,
+                                   Map<String, MultipartFile> fileUploads) {
+        if (field.getFieldType() == FieldType.FILE) {
+            MultipartFile file = fileUploads != null ? fileUploads.get("file_" + fieldId) : null;
+            if (file == null || file.isEmpty()) {
+                if (field.getRequired())
+                    throw new BusinessException("Campo obrigatório: " + field.getLabel());
+                return null;
+            }
+            try {
+                return fileStorageService.store(file);
+            } catch (IOException e) {
+                throw new BusinessException("Erro ao salvar arquivo: " + field.getLabel());
+            }
+        }
+        if (field.getRequired() && (textResponse == null || textResponse.isBlank()))
+            throw new BusinessException("Campo obrigatório: " + field.getLabel());
+        return textResponse;
     }
 
     @Transactional(readOnly = true)

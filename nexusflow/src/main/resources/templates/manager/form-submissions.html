@@ -72,9 +72,22 @@
           <td>
             <span th:class="'badge badge-' + ${s.status.badgeClass}" th:text="${s.status.label}"></span>
           </td>
-          <td>
-            <a th:href="@{/manager/form-submissions/{id}(id=${s.id})}"
-               class="btn btn-sm btn-outline" th:text="#{btn.view}">Ver</a>
+          <td style="white-space:nowrap">
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <a th:href="@{/manager/form-submissions/{id}(id=${s.id})}"
+                 class="btn btn-sm btn-outline" th:text="#{btn.view}">Ver</a>
+              <th:block th:if="${s.status.name() == 'PENDING'}">
+                <form th:action="@{/manager/form-submissions/{id}/review(id=${s.id})}" method="post" style="display:contents">
+                  <input type="hidden" name="status" value="APPROVED"/>
+                  <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
+                </form>
+                <form th:action="@{/manager/form-submissions/{id}/review(id=${s.id})}" method="post" style="display:contents"
+                      onsubmit="return confirm('Confirmar a recusa deste registro?')">
+                  <input type="hidden" name="status" value="REJECTED"/>
+                  <button type="submit" class="btn btn-sm btn-danger">Recusar</button>
+                </form>
+              </th:block>
+            </div>
           </td>
         </tr>
       </tbody>

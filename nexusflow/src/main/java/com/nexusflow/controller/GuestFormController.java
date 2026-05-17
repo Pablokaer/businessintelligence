@@ -10,7 +10,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -46,10 +49,11 @@ public class GuestFormController {
     @PostMapping("/form/{token}")
     public String submitForm(@PathVariable UUID token,
                              @ModelAttribute("form") FormDTOs.GuestFillForm form,
+                             @RequestParam(required = false) Map<String, MultipartFile> fileUploads,
                              Model model,
                              RedirectAttributes ra) {
         try {
-            formSubmissionService.submitGuestResponses(token, form);
+            formSubmissionService.submitGuestResponses(token, form, fileUploads);
             return "redirect:/guest/form/" + token + "/obrigado";
         } catch (NotFoundException e) {
             model.addAttribute("reason", e.getMessage());

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -122,14 +123,15 @@ public class EmployeeController {
     public String submitFillForm(@AuthenticationPrincipal User employee,
                                  @PathVariable UUID templateId,
                                  @Valid @ModelAttribute("form") FormDTOs.FormFillForm form,
-                                 BindingResult br, Model model, RedirectAttributes ra) {
+                                 BindingResult br, Model model, RedirectAttributes ra,
+                                 @RequestParam(required = false) Map<String, MultipartFile> fileUploads) {
         if (br.hasErrors()) {
             model.addAttribute("template", formTemplateService.findById(templateId));
             model.addAttribute("activeMenu", "forms");
             return "employee/form-fill";
         }
         try {
-            formSubmissionService.submit(employee, templateId, form);
+            formSubmissionService.submit(employee, templateId, form, fileUploads);
             ra.addFlashAttribute("successMsg", "Registro enviado com sucesso!");
         } catch (Exception e) {
             ra.addFlashAttribute("errorMsg", e.getMessage());

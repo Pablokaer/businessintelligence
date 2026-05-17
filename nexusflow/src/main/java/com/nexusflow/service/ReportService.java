@@ -3,6 +3,7 @@ package com.nexusflow.service;
 import com.nexusflow.dto.ViewModels;
 import com.nexusflow.enums.SubmissionStatus;
 import com.nexusflow.enums.SubmissionType;
+import com.nexusflow.repository.FormSubmissionRepository;
 import com.nexusflow.repository.SubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class ReportService {
 
     private final SubmissionRepository repo;
+    private final FormSubmissionRepository formRepo;
 
     @Transactional(readOnly = true)
     public ViewModels.SummaryVM summary(UUID managerId, LocalDate from, LocalDate to) {
@@ -29,11 +31,19 @@ public class ReportService {
         long total   = repo.filterByManager(managerId, null, null, null, from, to, Pageable.unpaged()).getTotalElements();
         long pending = repo.countPendingByManager(managerId);
 
+        BigDecimal formValue = orZero(formRepo.sumServiceValueByOwner(managerId, from, to));
+        BigDecimal formHours = orZero(formRepo.sumServiceHoursByOwner(managerId, from, to));
+        long formPending     = formRepo.countPendingByOwner(managerId);
+        long formTotal       = formRepo.countByOwnerAndDateRange(managerId, from, to);
+
+        BigDecimal totalServices = services.add(formValue);
+
         return ViewModels.SummaryVM.builder()
             .totalSales(sales).totalExpenses(expenses)
-            .totalServices(services).totalRefunds(refunds)
-            .netBalance(sales.add(services).subtract(expenses).subtract(refunds))
-            .totalSubmissions(total).pendingCount(pending)
+            .totalServices(totalServices).totalRefunds(refunds)
+            .netBalance(sales.add(totalServices).subtract(expenses).subtract(refunds))
+            .totalSubmissions(total + formTotal).pendingCount(pending + formPending)
+            .formServiceValue(formValue).formServiceHours(formHours)
             .from(from).to(to)
             .build();
     }
@@ -78,11 +88,20 @@ public class ReportService {
         BigDecimal refunds  = orZero(repo.sumByUserAndType(userId, SubmissionType.REFUND,  from, to));
         long pending  = repo.countByUserIdAndStatus(userId, SubmissionStatus.PENDING);
         long approved = repo.countByUserIdAndStatus(userId, SubmissionStatus.APPROVED);
+
+        BigDecimal formValue = orZero(formRepo.sumServiceValueByUser(userId, from, to));
+        BigDecimal formHours = orZero(formRepo.sumServiceHoursByUser(userId, from, to));
+        long formPending = formRepo.countByUserAndStatus(userId, SubmissionStatus.PENDING);
+        long formApproved = formRepo.countByUserAndStatus(userId, SubmissionStatus.APPROVED);
+
+        BigDecimal totalServices = services.add(formValue);
+
         return ViewModels.SummaryVM.builder()
             .totalSales(sales).totalExpenses(expenses)
-            .totalServices(services).totalRefunds(refunds)
-            .netBalance(sales.add(services).subtract(expenses).subtract(refunds))
-            .pendingCount(pending).approvedCount(approved)
+            .totalServices(totalServices).totalRefunds(refunds)
+            .netBalance(sales.add(totalServices).subtract(expenses).subtract(refunds))
+            .pendingCount(pending + formPending).approvedCount(approved + formApproved)
+            .formServiceValue(formValue).formServiceHours(formHours)
             .from(from).to(to).build();
     }
 

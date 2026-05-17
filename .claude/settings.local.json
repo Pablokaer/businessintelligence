@@ -24,7 +24,9 @@
       "Bash(xargs grep -l \"CreateOwnerForm\\\\|comercio.*email\")",
       "Bash(New-Item -ItemType Directory -Force \"D:\\\\coding\\\\nexusflow\\\\nexusflow\\\\src\\\\main\\\\resources\\\\templates\\\\guest\")",
       "Bash(Out-Null)",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\coding\\\\nexusflow\" -Directory -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }

@@ -30,7 +30,8 @@
 
   <div class="card">
     <div class="card-body">
-      <form th:action="@{/guest/form/{token}(token=${draft.shareToken})}" method="post">
+      <form th:action="@{/guest/form/{token}(token=${draft.shareToken})}" method="post"
+            enctype="multipart/form-data">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
         <div th:if="${#lists.isEmpty(draft.template.fields)}"
@@ -86,6 +87,13 @@
               <span th:text="${opt}"></span>
             </label>
           </div>
+
+          <input th:if="${field.fieldType.name() == 'FILE'}"
+                 type="file"
+                 th:name="${'file_' + field.id}"
+                 class="form-control"
+                 accept=".pdf,image/*"
+                 th:required="${field.required}"/>
 
           <div th:if="${field.fieldType.name() == 'CHECKBOX'}"
                class="chk-group"

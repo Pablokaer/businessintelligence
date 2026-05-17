@@ -20,6 +20,9 @@ public class ViewModels {
         private long totalSubmissions;
         private long pendingCount;
         private long approvedCount;
+        // Form submission contributions (merged into totals above)
+        private BigDecimal formServiceValue;
+        private BigDecimal formServiceHours;
         private LocalDate from;
         private LocalDate to;
     }
